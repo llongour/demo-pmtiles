@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Change the default position for attribution</title>
+  <meta property="og:description" content="Place attribution in the top-left position when initializing a map." />
+  <meta charset='utf-8'>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel='stylesheet' href='https://unpkg.com/maplibre-gl@4.3.2/dist/maplibre-gl.css' />
+  <script src='https://unpkg.com/maplibre-gl@4.3.2/dist/maplibre-gl.js'></script>
+  <script src="https://cdn.jsdelivr.net/npm/pmtiles@3.0.5/dist/pmtiles.js"></script>
+  <script src="https://unpkg.com/@maplibre/maplibre-gl-geocoder@1.2.0/dist/maplibre-gl-geocoder.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/@maplibre/maplibre-gl-geocoder@1.2.0/dist/maplibre-gl-geocoder.css" type="text/css">
+  <script src="assets/js/geocoderApi.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body,
+    #map {
+      height: 100%;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="map"></div>
+
+  <script>
+    const protocol = new pmtiles.Protocol();
+    maplibregl.addProtocol("pmtiles", protocol.tile);
+    const map = new maplibregl.Map({
+      container: 'map',
+      style: {
+        'version': 8,
+        'sources': {
+          'raster-tiles': {
+            'type': 'raster',
+            'tiles': [
+              'https://adict.strasbourg.eu/mapproxy/service?VERSION=1.1.0&1=2&SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1&LAYERS=monstrasbourg&STYLES=&FORMAT=image%2Fpng&TRANSPARENT=false&HEIGHT=256&WIDTH=256&SRS=EPSG%3A3857&BBOX={bbox-epsg-3857}'
+            ],
+            'tileSize': 256
+          }
+        },
+        'layers': [
+          {
+            'id': 'simple-tiles',
+            'type': 'raster',
+            'source': 'raster-tiles',
+            'minzoom': 0,
+            'maxzoom': 22
+          }
+        ]
+      },
+      minZoom: 10,
+      maxZoom: 16,
+      center: [7.7254, 48.5798],
+      hash: true,
+      zoom: 13,
+    });
+
+    map.dragRotate.disable();
+
+    map.addControl(
+    new MaplibreGeocoder(geocoderApi, {
+      maplibregl,
+    })
+  );
+
+    map.addControl(
+        new maplibregl.NavigationControl({
+            visualizePitch: true,
+            showZoom: true,
+            showCompass: false
+        })
+    );
+
+    map.addControl(
+    new maplibregl.GeolocateControl({
+      positionOptions: {
+        enableHighAccuracy: true,
+      },
+      trackUserLocation: true,
+    })
+  );
+
+    map.addControl(new maplibregl.FullscreenControl());
+  map.addControl(new maplibregl.NavigationControl({ showCompass: false }));
+
+    map.on("load", function () {
+
+      map.addSource("parcel-source", {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: [] },
+      })
+
+      map.addLayer({
+        id: "parcel-layer",
+        type: "fill",
+        source: "parcel-source",
+        paint: {
+          "fill-color": "blue",
+          "fill-opacity": 0.3,
+        },
+      })
+
+      map.addSource("masque-source", {
+        type: "geojson",
+        data: "assets/masque.geojson",
+      })
+
+      map.addLayer({
+        id: "masque-layer",
+        type: "fill",
+        source: "masque-source",
+        paint: {
+          "fill-color": "grey",
+          "fill-opacity": 0.5,
+        },
+      })
+
+      map.addSource("papizorn-source", {
+        type: "geojson",
+        data: "assets/papi_zorn.geojson",
+      })
+
+      map.addLayer({
+        id: "papizorn-layer",
+        type: "fill",
+        source: "papizorn-source",
+        paint: {
+          "fill-color": "orange",
+          "fill-opacity": 0,
+        },
+      })
+
+      map.addSource("zonesinondables-source", {
+        type: "vector",
+        url: "pmtiles://https://ville-eurometropole-strasbourg.github.io/carte-eligibilite-alabri/assets/zonesinondables.pmtiles",
+        attribution: 'Eurométropole de Strasbourg'
+      })
+
+      map.addSource("couleeseauxboueuses-source", {
+        type: "vector",
+        url: "pmtiles://https://ville-eurometropole-strasbourg.github.io/carte-eligibilite-alabri/assets/coulees_eaux_boueuses.pmtiles",
+        attribution: 'Eurométropole de Strasbourg'
+      })
+
+      map.addLayer({
+        id: 'zonesinondables-layer',
+        type: 'fill',
+        source: 'zonesinondables-source',
+        'source-layer': 'zi',
+        paint: {
+          "fill-color": "#1D31B8",
+          "fill-opacity": 0.2,
+        }
+      })
+
+      map.addLayer({
+        id: 'couleeseauxboueuses-layer',
+        type: 'fill',
+        source: 'couleeseauxboueuses-source',
+        'source-layer': 'couleeseauxboueuses',
+        paint: {
+          "fill-color": "#582900",
+          "fill-opacity": 0.2,
+        }
+      })
+
+
+
+    })
+  </script>
+</body>
+
+</html>
