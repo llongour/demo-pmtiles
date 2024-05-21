@@ -1,17 +1,19 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 
 <head>
-  <title>Change the default position for attribution</title>
-  <meta property="og:description" content="Place attribution in the top-left position when initializing a map." />
+  <title>Éligibilite au diagnostic ALABRI</title>
   <meta charset='utf-8'>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="assets/style.css">
+  <script src='https://cdn.jsdelivr.net/npm/geotoolbox@2.0'></script>
+  <script src='https://cdn.jsdelivr.net/npm/turf@3.0.14'></script>
   <link rel='stylesheet' href='https://unpkg.com/maplibre-gl@4.3.2/dist/maplibre-gl.css' />
   <script src='https://unpkg.com/maplibre-gl@4.3.2/dist/maplibre-gl.js'></script>
   <script src="https://cdn.jsdelivr.net/npm/pmtiles@3.0.5/dist/pmtiles.js"></script>
   <script src="https://unpkg.com/@maplibre/maplibre-gl-geocoder@1.2.0/dist/maplibre-gl-geocoder.min.js"></script>
-  <link rel="stylesheet" href="https://unpkg.com/@maplibre/maplibre-gl-geocoder@1.2.0/dist/maplibre-gl-geocoder.css" type="text/css">
+  <link rel="stylesheet" href="https://unpkg.com/@maplibre/maplibre-gl-geocoder@1.2.0/dist/maplibre-gl-geocoder.css"
+    type="text/css">
   <script src="assets/js/geocoderApi.js"></script>
   <style>
     body {
@@ -31,8 +33,10 @@
   <div id="map"></div>
 
   <script>
+    // Configuration du protocole pour pmtiles
     const protocol = new pmtiles.Protocol();
     maplibregl.addProtocol("pmtiles", protocol.tile);
+
     const map = new maplibregl.Map({
       container: 'map',
       style: {
@@ -66,38 +70,40 @@
     map.dragRotate.disable();
 
     map.addControl(
-    new MaplibreGeocoder(geocoderApi, {
-      maplibregl,
-    })
-  );
-
-    map.addControl(
-        new maplibregl.NavigationControl({
-            visualizePitch: true,
-            showZoom: true,
-            showCompass: false
-        })
+      new MaplibreGeocoder(geocoderApi, {
+        maplibregl,
+      })
     );
 
     map.addControl(
-    new maplibregl.GeolocateControl({
-      positionOptions: {
-        enableHighAccuracy: true,
-      },
-      trackUserLocation: true,
-    })
-  );
+      new maplibregl.NavigationControl({
+        visualizePitch: true,
+        showZoom: true,
+        showCompass: false
+      })
+    );
+
+    map.addControl(
+      new maplibregl.GeolocateControl({
+        positionOptions: {
+          enableHighAccuracy: true,
+        },
+        trackUserLocation: true,
+      })
+    );
 
     map.addControl(new maplibregl.FullscreenControl());
-  map.addControl(new maplibregl.NavigationControl({ showCompass: false }));
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }));
 
     map.on("load", function () {
 
+      // Ajout de la source de données pour les parcelles
       map.addSource("parcel-source", {
         type: "geojson",
         data: { type: "FeatureCollection", features: [] },
       })
 
+      // Ajout de la couche pour afficher les parcelles
       map.addLayer({
         id: "parcel-layer",
         type: "fill",
@@ -108,11 +114,13 @@
         },
       })
 
+      // Ajout de la source de données pour le masque
       map.addSource("masque-source", {
         type: "geojson",
         data: "assets/masque.geojson",
       })
 
+      // Ajout de la couche pour afficher le masque
       map.addLayer({
         id: "masque-layer",
         type: "fill",
@@ -123,11 +131,13 @@
         },
       })
 
+      // Ajout de la source de données pour Papi Zorn
       map.addSource("papizorn-source", {
         type: "geojson",
         data: "assets/papi_zorn.geojson",
       })
 
+      // Ajout de la couche pour afficher Papi Zorn
       map.addLayer({
         id: "papizorn-layer",
         type: "fill",
@@ -138,18 +148,14 @@
         },
       })
 
+      // Ajout de la source de données pour les zones inondables
       map.addSource("zonesinondables-source", {
         type: "vector",
         url: "pmtiles://https://ville-eurometropole-strasbourg.github.io/carte-eligibilite-alabri/assets/zonesinondables.pmtiles",
-        attribution: 'Eurométropole de Strasbourg'
+        attribution: 'Ville et Eurométropole de Strasbourg'
       })
 
-      map.addSource("couleeseauxboueuses-source", {
-        type: "vector",
-        url: "pmtiles://https://ville-eurometropole-strasbourg.github.io/carte-eligibilite-alabri/assets/coulees_eaux_boueuses.pmtiles",
-        attribution: 'Eurométropole de Strasbourg'
-      })
-
+      // Ajout de la couche pour afficher les zones inondables
       map.addLayer({
         id: 'zonesinondables-layer',
         type: 'fill',
@@ -161,6 +167,14 @@
         }
       })
 
+      // Ajout de la source de données pour les coulées d'eaux boueuses
+      map.addSource("couleeseauxboueuses-source", {
+        type: "vector",
+        url: "pmtiles://https://ville-eurometropole-strasbourg.github.io/carte-eligibilite-alabri/assets/coulees_eaux_boueuses.pmtiles",
+        attribution: 'Ville et Eurométropole de Strasbourg'
+      })
+
+      // Ajout de la couche pour afficher les coulées d'eaux boueuses
       map.addLayer({
         id: 'couleeseauxboueuses-layer',
         type: 'fill',
@@ -174,7 +188,76 @@
 
 
 
+    });
+
+    // Gestion de l'événement de clic sur la carte
+    map.on("click", function (e) {
+      // Vérification si le clic est sur la couche du masque
+      const featuresMasque = map.queryRenderedFeatures(e.point, {
+        layers: ["masque-layer"],
+      });
+
+      if (featuresMasque.length > 0) {
+        return;
+      }
+
+      // Vérification si le clic est sur la couche de Papi Zorn
+      const featuresPapiZorn = map.queryRenderedFeatures(e.point, {
+        layers: ["papizorn-layer"],
+      });
+
+      // Récupération des coordonnées du clic
+      var coordinates = { lng: parseFloat(e.lngLat.lng.toFixed(5)), lat: parseFloat(e.lngLat.lat.toFixed(5)) };
+      console.log(coordinates);
+
+      const lat = coordinates.lat;
+      const lon = coordinates.lng;
+
+      Promise.all([
+      recupererParcelle(lat, lon)
+      ]).then((results) => {
+        const cadastreData = results[0];
+        console.log(cadastreData);
+
+
+
+        if (cadastreData.geo_shape) {
+          map.getSource("parcel-source").setData(cadastreData.geo_shape);
+        } else {
+          map
+            .getSource("parcel-source")
+            .setData({ type: "FeatureCollection", features: [] });
+        }
+
+
+
+      })
+
     })
+    // Fonction pour récupérer les données de la parcelle en utilisant l'API d'OpenDataSoft
+    function recupererParcelle(lat, lng) {
+      const cadApiUrl = `https://data.strasbourg.eu/api/records/1.0/search/?dataset=parcelles_cadastrales&q=&geofilter.distance=${lat}%2C${lng}%2C1`;
+
+      return fetch(cadApiUrl)
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.records && data.records.length > 0) {
+            const parcelleId = data.records[0].fields.id_parcellaire;
+            const parcelleGeo = data.records[0].fields.geo_shape;
+            return { id_parcellaire: parcelleId, geo_shape: parcelleGeo };
+          } else {
+            return "N/A";
+          }
+        })
+        .catch((error) => {
+          console.error(
+            "Une erreur s'est produite lors de la récupération des données du cadastre :",
+            error
+          );
+          return "N/A";
+        });
+    }
+
   </script>
 </body>
 
